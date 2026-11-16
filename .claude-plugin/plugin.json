@@ -1,7 +1,7 @@
 {
   "name": "ugly-christmas-sweater",
-  "version": "0.2.0",
-  "description": "A theme that knits an ugly Christmas sweater behind the chat: one row per tool call, tackier as the context fills.",
+  "version": "0.2.1",
+  "description": "A completely unnecessary desktop theme that turns your token consumption into increasingly ugly Christmas sweaters. You write the code. Claude knits the consequences.",
   "types": "./types/index.d.ts",
   "userConfig": {
     "timeZone": {
@@ -10,5 +10,9 @@
       "description": "IANA time zone whose midnight starts a new sweater, such as Asia/Tokyo. Empty: this machine's own.",
       "default": ""
     }
-  }
+  },
+  "author": {
+    "name": "TuesdayGhost"
+  },
+  "license": "MIT"
 }
