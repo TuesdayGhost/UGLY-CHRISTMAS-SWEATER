@@ -46,10 +46,11 @@ const { theme, problems } = makeColors({
   },
 })
 
-// A light frost: the stitches should still read as stitches under the panels.
+// A light frost: the sweater sits behind the words, so the stitches should
+// still read as stitches under the panels.
 const LOOK: ThemeSetArgs = {
   colors: theme,
-  backdrop: { scene: SCENE, glass: { blur: 3, opacity: 0.8 } },
+  backdrop: { scene: SCENE, glass: { blur: 2, opacity: 0.66 } },
 }
 
 // Every change goes through here, so midnight is noticed before any of them:

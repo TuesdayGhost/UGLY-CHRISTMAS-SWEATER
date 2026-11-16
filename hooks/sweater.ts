@@ -620,21 +620,21 @@ export const paneSvg = (s: Sweater): string =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -3 112 66" width="560" height="330"><style>${STYLE}</style>${drawing(s)}</svg>`
 
 /**
- * The backdrop: a wool ground over the whole window and the sweater to the
- * right, clear of the words. Narrower boxes pull it in from the cropped edge.
+ * The backdrop: a wool ground over the whole window and the sweater large in
+ * the middle, behind the words. Narrower boxes shrink it to fit their width.
  */
 export const sceneSvg = (s: Sweater): string =>
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">' +
   `<style>${STYLE}` +
   '.ground{fill:#efe6d6}.purl{stroke:#b9a88c}' +
   '@media (prefers-color-scheme:dark){.ground{fill:#13241b}.purl{stroke:#3d5a48}}' +
-  '.sw{transform:translate(850px,60px)}' +
-  '@media (max-aspect-ratio:29/20){.sw{transform:translate(760px,60px)}}' +
-  '@media (max-aspect-ratio:5/4){.sw{transform:translate(600px,50px)}}' +
-  '@media (max-aspect-ratio:1/1){.sw{transform:translate(440px,40px)}}' +
-  '@media (max-aspect-ratio:3/5){.sw{transform:translate(541px,60px) scale(.72)}}' +
+  '.sw{transform:translate(260px,110px)}' +
+  '@media (max-aspect-ratio:1/1){.sw{transform:translate(368px,120px) scale(.8)}}' +
+  '@media (max-aspect-ratio:3/4){.sw{transform:translate(465px,130px) scale(.62)}}' +
+  '@media (max-aspect-ratio:3/5){.sw{transform:translate(530px,140px) scale(.5)}}' +
+  '@media (max-aspect-ratio:1/2){.sw{transform:translate(584px,150px) scale(.4)}}' +
   '</style>' +
   '<defs><pattern id="wool" width="18" height="16" patternUnits="userSpaceOnUse"><path class="purl" d="M2 2L9 13L16 2" fill="none" stroke-width="2.2" stroke-linecap="round" opacity=".22"/></pattern></defs>' +
   '<rect class="ground" width="1600" height="1000"/><rect width="1600" height="1000" fill="url(#wool)"/>' +
-  `<g class="sw"><svg width="720" height="424" viewBox="-8 -3 112 66">${drawing(s)}</svg></g>` +
+  `<g class="sw"><svg width="1080" height="636" viewBox="-8 -3 112 66">${drawing(s)}</svg></g>` +
   '</svg>'

@@ -1,6 +1,6 @@
 {
   "name": "ugly-christmas-sweater",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A theme that knits an ugly Christmas sweater behind the chat: one row per tool call, tackier as the context fills.",
   "types": "./types/index.d.ts",
   "userConfig": {
