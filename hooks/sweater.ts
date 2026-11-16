@@ -628,11 +628,11 @@ export const sceneSvg = (s: Sweater): string =>
   `<style>${STYLE}` +
   '.ground{fill:#efe6d6}.purl{stroke:#b9a88c}' +
   '@media (prefers-color-scheme:dark){.ground{fill:#13241b}.purl{stroke:#3d5a48}}' +
-  '.sw{transform:translate(260px,110px)}' +
-  '@media (max-aspect-ratio:1/1){.sw{transform:translate(368px,120px) scale(.8)}}' +
-  '@media (max-aspect-ratio:3/4){.sw{transform:translate(465px,130px) scale(.62)}}' +
-  '@media (max-aspect-ratio:3/5){.sw{transform:translate(530px,140px) scale(.5)}}' +
-  '@media (max-aspect-ratio:1/2){.sw{transform:translate(584px,150px) scale(.4)}}' +
+  '.sw{transform:translate(260px,165px)}' +
+  '@media (max-aspect-ratio:1/1){.sw{transform:translate(368px,170px) scale(.8)}}' +
+  '@media (max-aspect-ratio:3/4){.sw{transform:translate(465px,175px) scale(.62)}}' +
+  '@media (max-aspect-ratio:3/5){.sw{transform:translate(530px,180px) scale(.5)}}' +
+  '@media (max-aspect-ratio:1/2){.sw{transform:translate(584px,185px) scale(.4)}}' +
   '</style>' +
   '<defs><pattern id="wool" width="18" height="16" patternUnits="userSpaceOnUse"><path class="purl" d="M2 2L9 13L16 2" fill="none" stroke-width="2.2" stroke-linecap="round" opacity=".22"/></pattern></defs>' +
   '<rect class="ground" width="1600" height="1000"/><rect width="1600" height="1000" fill="url(#wool)"/>' +
