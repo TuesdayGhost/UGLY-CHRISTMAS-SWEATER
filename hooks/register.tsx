@@ -12,7 +12,7 @@ const ALT = 'An ugly Christmas sweater being knitted, one row per tool call'
 
 // Bump the tag when a Sweater's fields change: it declines what older code kept.
 const sweater = atom({ plugin: 'ugly-christmas-sweater', key: 'sweater' } as const, EMPTY, {
-  shape: 'sweater-1',
+  shape: 'sweater-2',
 })
 
 // Wool white and cranberry by day; pine and candlelight by night.

@@ -8,7 +8,7 @@ A Claude Code desktop theme mod that knits an ugly Christmas sweater behind the 
 - The fuller the context window, the tackier it gets: pom-poms, jingle bells, tinsel, blinking fairy lights and, past 80%, googly eyes and a red nose.
 - A failed tool call drops stitches: a hole, a ladder under it and a loose end of yarn.
 - `/compact` (or `/clear`) shakes all the trimmings off.
-- At midnight a new sweater is cast on. A finished sweater (52 rows) is folded onto the pile and the next one starts.
+- At midnight a new sweater is cast on. A finished sweater (52 rows) goes up on a hanger along a rail at the top (the last four; older ones are folded onto a pile) and the next one starts.
 - `/sweater` opens the sweater in a pane of its own.
 
 The `timeZone` option (an IANA name such as `Asia/Tokyo`) picks whose midnight counts; empty means the machine's own.

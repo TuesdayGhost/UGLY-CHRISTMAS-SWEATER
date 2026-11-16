@@ -27,7 +27,13 @@ test('each tool has its motif, and a full sweater fits an Svg', () => {
   expect(s.snags.length).toBe(Math.ceil(H / 3))
   expect(sceneSvg(s).length).toBeLessThan(131072)
   // The row after a finished sweater casts on the next one.
-  expect(knit(s, 'Bash', false)).toMatchObject({ no: 2, rows: 1 })
+  const next = knit(s, 'Bash', false)
+  expect(next).toMatchObject({ no: 2, rows: 1 })
+  // ...and the finished one goes up on the rail, at most four of them.
+  expect(next.hung.length).toBe(1)
+  expect(sceneSvg(next)).toContain('M40 -112H1040')
+  const full = { ...next, hung: Array.from({ length: 4 }, () => next.hung[0]!), rows: H, bands: s.bands, snags: s.snags }
+  expect(sceneSvg(full).length).toBeLessThan(131072)
 })
 
 test('rows, holes, trimmings, compaction and midnight', async ($, on) => {

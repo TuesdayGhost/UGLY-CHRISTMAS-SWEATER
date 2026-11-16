@@ -1,6 +1,6 @@
 // The sweater itself: its shape, how a tool call knits a row, and the SVG.
 // Pure: nothing here touches `$`, so it runs anywhere.
-import type { Band, Snag, Sweater } from '../types'
+import type { Band, Hung, Snag, Sweater } from '../types'
 
 // One stitch is one cell. The sweater lies flat, sleeves out, knitted top-down.
 export const W = 96
@@ -11,6 +11,7 @@ const HEM = 48 // the body's ribbing starts here
 const CUFF = 41
 const SLEEVE_END = 44
 const SLEEVE_W = 12
+const RAIL = 4 // how many finished sweaters hang on show
 const NECK = [7, 6, 4]
 const COLLAR = [9, 8, 7, 5]
 
@@ -192,14 +193,16 @@ export const EMPTY: Sweater = {
   rows: 0,
   bands: [],
   snags: [],
+  hung: [],
   tacky: 0,
   shed: 0,
 }
 
-export const fresh = (day: string, no: number, tacky = 0): Sweater => ({
+export const fresh = (day: string, no: number, tacky = 0, hung: Hung[] = []): Sweater => ({
   ...EMPTY,
   day,
   no,
+  hung,
   seed: hash(`${day}#${no}`),
   tacky,
 })
@@ -219,7 +222,11 @@ export const asSweater = (value: unknown): Sweater | undefined => {
     Array.isArray(s.snags) &&
     s.bands.every(b => MOTIFS[b.motif] !== undefined)
 
-  return isOne ? { ...EMPTY, ...s } as Sweater : undefined
+  const hung = (Array.isArray(s.hung) ? s.hung : []).filter(
+    one => Array.isArray(one?.bands) && Array.isArray(one.snags) && one.bands.every(b => MOTIFS[b.motif] !== undefined),
+  )
+
+  return isOne ? ({ ...EMPTY, ...s, hung } as Sweater) : undefined
 }
 
 /** The local date at `ms`, `YYYY-MM-DD`, in `timeZone` or the machine's own. */
@@ -274,7 +281,9 @@ const newBand = (s: Sweater, tool: string): Band => {
  * starts the next in its own tool's motif; a failed one drops stitches.
  */
 export const knit = (s: Sweater, tool: string, hasFailed: boolean): Sweater => {
-  const from = s.rows >= H ? fresh(s.day, s.no + 1, s.tacky) : { ...s, shed: 0 }
+  // A finished sweater goes on a hanger; the rail holds the last few.
+  const rail = [...s.hung, { seed: s.seed, bands: s.bands, snags: s.snags }].slice(-RAIL)
+  const from = s.rows >= H ? fresh(s.day, s.no + 1, s.tacky, rail) : { ...s, shed: 0 }
   const isBandDone = from.rows >= knittedBy(from.bands)
   const bands =
     isBandDone && from.rows < HEM ? [...from.bands, newBand(from, tool)] : from.bands
@@ -487,13 +496,17 @@ const STYLE =
   '.sway{animation:sway 3s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 0}@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}' +
   '@media (prefers-reduced-motion:reduce){.blink,.shimmer,.ring,.googly,.sway{animation:none}.fall{animation:none;opacity:0}}'
 
-/** The sweater's own drawing, in stitch units: x 0 to 96, y about -4 to 62. */
-const drawing = (s: Sweater): string => {
-  const rows = layout(s.bands)
-  const rib = ribOf(s.seed)
+/**
+ * The knitting alone, down to row `upTo`: stitches by yarn, the holes left out,
+ * the ladders and loose ends. `isFine` adds what only shows at full size: the
+ * stitch texture, the outline of rows to come, and the loose ends' sway.
+ */
+const cloth = (c: Hung, upTo: number, isFine: boolean): string => {
+  const rows = layout(c.bands)
+  const rib = ribOf(c.seed)
   const holes = new Set<string>()
 
-  for (const snag of s.snags) {
+  for (const snag of c.snags) {
     for (let k = 0; k < snag.drop; k++) {
       for (let x = snag.x; x < snag.x + snag.w; x++) {
         holes.add(`${x},${snag.row + k}`)
@@ -508,13 +521,13 @@ const drawing = (s: Sweater): string => {
     let x = 0
 
     while (x < W) {
-      if (part(x, r) === 0 || (r < s.rows && holes.has(`${x},${r}`))) {
+      if (part(x, r) === 0 || (r < upTo && holes.has(`${x},${r}`))) {
         x += 1
         continue
       }
       const from = x
 
-      if (r >= s.rows) {
+      if (r >= upTo) {
         while (x < W && part(x, r) !== 0) {
           x += 1
         }
@@ -530,11 +543,12 @@ const drawing = (s: Sweater): string => {
       knitted += `M${from} ${r}h${x - from}`
     }
   }
-  let out =
-    '<defs><pattern id="v" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M.12 .05L.5 .95L.88 .05" fill="none" stroke="#000" stroke-opacity=".28" stroke-width=".16"/><path d="M.5 .95V.6" stroke="#fff" stroke-opacity=".12" stroke-width=".1"/></pattern></defs>'
+  let out = ''
 
-  // Rows still to come: a dotted outline of where the sweater will be.
-  out += `<path d="${ghost}" transform="translate(0 .5)" fill="none" stroke="#8a8a8a" stroke-opacity=".3" stroke-width=".28" stroke-dasharray=".28 .72" stroke-dashoffset="-.36"/>`
+  if (isFine) {
+    // Rows still to come: a dotted outline of where the sweater will be.
+    out += `<path d="${ghost}" transform="translate(0 .5)" fill="none" stroke="#8a8a8a" stroke-opacity=".3" stroke-width=".28" stroke-dasharray=".28 .72" stroke-dashoffset="-.36"/>`
+  }
   out += '<g transform="translate(0 .5)" fill="none" stroke-width="1.03" shape-rendering="crispEdges">'
   byYarn.forEach((d, i) => {
     if (d !== '') {
@@ -542,18 +556,21 @@ const drawing = (s: Sweater): string => {
     }
   })
   out += '</g>'
-  out += `<path d="${knitted}" transform="translate(0 .5)" fill="none" stroke="url(#v)" stroke-width="1"/>`
+
+  if (isFine) {
+    out += `<path d="${knitted}" transform="translate(0 .5)" fill="none" stroke="url(#v)" stroke-width="1"/>`
+  }
 
   // Dropped stitches: rungs across the ladder, and the end that came loose.
-  for (const snag of s.snags) {
-    if (snag.row >= s.rows) {
+  for (const snag of c.snags) {
+    if (snag.row >= upTo) {
       continue
     }
     const color = YARNS[snag.yarn]
     const [left, right] = [snag.x - 0.2, snag.x + snag.w + 0.2]
     let rungs = ''
 
-    for (let k = 1; k < snag.drop && snag.row + k < s.rows; k++) {
+    for (let k = 1; k < snag.drop && snag.row + k < upTo; k++) {
       rungs += `M${left} ${snag.row + k + 0.5}h${right - left}`
     }
     const [x, y] = [snag.x + snag.w / 2, snag.row + 0.8]
@@ -564,8 +581,19 @@ const drawing = (s: Sweater): string => {
     }
     out +=
       `<path d="${rungs}" fill="none" stroke="${color}" stroke-width=".22" opacity=".85"/>` +
-      `<g class="sway"><path d="${loose}q.9 .5 .3 1.1" fill="none" stroke="${color}" stroke-width=".42" stroke-linecap="round"/></g>`
+      `<g${isFine ? ' class="sway"' : ''}><path d="${loose}q.9 .5 .3 1.1" fill="none" stroke="${color}" stroke-width=".42" stroke-linecap="round"/></g>`
   }
+
+  return out
+}
+
+/** The sweater's own drawing, in stitch units: x 0 to 96, y about -4 to 62. */
+const drawing = (s: Sweater): string => {
+  const rib = ribOf(s.seed)
+  let out =
+    '<defs><pattern id="v" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M.12 .05L.5 .95L.88 .05" fill="none" stroke="#000" stroke-opacity=".28" stroke-width=".16"/><path d="M.5 .95V.6" stroke="#fff" stroke-opacity=".12" stroke-width=".1"/></pattern></defs>'
+
+  out += cloth(s, s.rows, true)
 
   // Trimmings: what is on now, or what a compaction just shook off.
   if (s.shed > 0) {
@@ -596,45 +624,94 @@ const drawing = (s: Sweater): string => {
       `<g><circle cx="89" cy="58" r="3.6" fill="${yarn}"/><path d="M86 57q3-3 6 0M86 59q3-3 6.4-.6M87.4 55.4q3 2 2.6 6" fill="none" stroke="#000" stroke-opacity=".3" stroke-width=".3"/></g>`
   }
 
-  // Finished ones, folded in a pile.
-  for (let i = 0; i < Math.min(s.no - 1, 7); i++) {
+  // Finished ones that no longer fit the rail, folded in a pile.
+  for (let i = 0; i < Math.min(s.no - 1 - s.hung.length, 7); i++) {
     const top = 59.5 - i * 1.7
     const a = YARNS[(s.seed + i * 3) % YARNS.length]
     const b = YARNS[(s.seed + i * 7 + 2) % YARNS.length]
 
     out += `<rect x="3" y="${n1(top)}" width="12" height="1.6" rx=".6" fill="${a}"/><path d="M4 ${n1(top + 0.8)}h10" stroke="${b}" stroke-width=".5" stroke-dasharray="1 1"/>`
   }
-  out += `<text x="${CX}" y="57.5" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="2.1" fill="#8a8a8a">${label(s)}</text>`
+  // Where it stands, as a list in the clear corner beside the right shoulder.
+  out +=
+    '<text y="-.5" font-family="ui-monospace,Menlo,monospace" font-size="2.1" fill="#8a8a8a">' +
+    facts(s).map(line => `<tspan x="83" dy="3">・${line}</tspan>`).join('') +
+    '</text>'
 
   return out
 }
 
-/** One line on where the sweater stands. */
-export const label = (s: Sweater): string =>
+/** Where the sweater stands, one fact per line. */
+export const facts = (s: Sweater): string[] =>
   s.day === ''
-    ? 'まだ毛糸玉のまま'
-    : `${s.day} · ${s.no}枚目 · ${Math.min(s.rows, H)}/${H}段${isFinished(s) ? ' 完成!' : ''}${s.snags.length > 0 ? ` · 穴${s.snags.length}` : ''} · ダサさ${Math.round(s.tacky)}%`
+    ? ['まだ毛糸玉のまま']
+    : [
+        s.day,
+        `${s.no}枚目`,
+        `${Math.min(s.rows, H)}/${H}段${isFinished(s) ? ' 完成!' : ''}`,
+        ...(s.snags.length > 0 ? [`穴${s.snags.length}`] : []),
+        `ダサさ${Math.round(s.tacky)}%`,
+      ]
+
+/** The same on one line. */
+export const label = (s: Sweater): string => facts(s).join(' · ')
 
 /** The sweater alone, for a pane. */
 export const paneSvg = (s: Sweater): string =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -3 112 66" width="560" height="330"><style>${STYLE}</style>${drawing(s)}</svg>`
 
 /**
+ * The day's finished sweaters on hangers along a rail above the one on the
+ * needle, in the sweater group's own pixels. Small and still: no texture, no
+ * trimmings, nothing animated. The oldest give way where the markup runs long.
+ */
+const rail = (hung: Hung[], room: number): string => {
+  let minis = hung.map(one => cloth(one, H, false))
+
+  while (minis.reduce((sum, mini) => sum + mini.length, 0) > room) {
+    minis = minis.slice(1)
+  }
+
+  if (minis.length === 0) {
+    return ''
+  }
+
+  return (
+    '<path d="M40 -112H1040" stroke="#b5895a" stroke-width="5" stroke-linecap="round"/>' +
+    minis
+      .map((mini, i) => {
+        const cx = 540 + (i - (minis.length - 1) / 2) * 240
+
+        return (
+          `<path d="M${cx} -112v9M${cx - 36} -89L${cx} -103L${cx + 36} -89" fill="none" stroke="#c9c9c9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+          `<svg x="${cx - 90}" y="-98" width="180" height="101.25" viewBox="0 -1 96 54">${mini}</svg>`
+        )
+      })
+      .join('')
+  )
+}
+
+/**
  * The backdrop: a wool ground over the whole window and the sweater large in
  * the middle, behind the words. Narrower boxes shrink it to fit their width.
  */
-export const sceneSvg = (s: Sweater): string =>
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">' +
-  `<style>${STYLE}` +
-  '.ground{fill:#efe6d6}.purl{stroke:#b9a88c}' +
-  '@media (prefers-color-scheme:dark){.ground{fill:#13241b}.purl{stroke:#3d5a48}}' +
-  '.sw{transform:translate(260px,165px)}' +
-  '@media (max-aspect-ratio:1/1){.sw{transform:translate(368px,170px) scale(.8)}}' +
-  '@media (max-aspect-ratio:3/4){.sw{transform:translate(465px,175px) scale(.62)}}' +
-  '@media (max-aspect-ratio:3/5){.sw{transform:translate(530px,180px) scale(.5)}}' +
-  '@media (max-aspect-ratio:1/2){.sw{transform:translate(584px,185px) scale(.4)}}' +
-  '</style>' +
-  '<defs><pattern id="wool" width="18" height="16" patternUnits="userSpaceOnUse"><path class="purl" d="M2 2L9 13L16 2" fill="none" stroke-width="2.2" stroke-linecap="round" opacity=".22"/></pattern></defs>' +
-  '<rect class="ground" width="1600" height="1000"/><rect width="1600" height="1000" fill="url(#wool)"/>' +
-  `<g class="sw"><svg width="1080" height="636" viewBox="-8 -3 112 66">${drawing(s)}</svg></g>` +
-  '</svg>'
+export const sceneSvg = (s: Sweater): string => {
+  const main = drawing(s)
+
+  return (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">' +
+    `<style>${STYLE}` +
+    '.ground{fill:#efe6d6}.purl{stroke:#b9a88c}' +
+    '@media (prefers-color-scheme:dark){.ground{fill:#13241b}.purl{stroke:#3d5a48}}' +
+    '.sw{transform:translate(260px,190px)}' +
+    '@media (max-aspect-ratio:1/1){.sw{transform:translate(368px,190px) scale(.8)}}' +
+    '@media (max-aspect-ratio:3/4){.sw{transform:translate(465px,190px) scale(.62)}}' +
+    '@media (max-aspect-ratio:3/5){.sw{transform:translate(530px,190px) scale(.5)}}' +
+    '@media (max-aspect-ratio:1/2){.sw{transform:translate(584px,190px) scale(.4)}}' +
+    '</style>' +
+    '<defs><pattern id="wool" width="18" height="16" patternUnits="userSpaceOnUse"><path class="purl" d="M2 2L9 13L16 2" fill="none" stroke-width="2.2" stroke-linecap="round" opacity=".22"/></pattern></defs>' +
+    '<rect class="ground" width="1600" height="1000"/><rect width="1600" height="1000" fill="url(#wool)"/>' +
+    `<g class="sw">${rail(s.hung, 120000 - main.length)}<svg width="1080" height="636" viewBox="-8 -3 112 66">${main}</svg></g>` +
+    '</svg>'
+  )
+}

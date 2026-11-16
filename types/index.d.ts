@@ -4,6 +4,9 @@ export type Band = { motif: string; bg: number; fg: number; ac: number; trim: nu
 /** Dropped stitches from a failed tool call: a hole, a ladder under it, a loose end. */
 export type Snag = { row: number; x: number; w: number; drop: number; yarn: number; len: number }
 
+/** A finished sweater kept to hang up: what it takes to draw its knitting again. */
+export type Hung = { seed: number; bands: Band[]; snags: Snag[] }
+
 export type Sweater = {
   /** The local date it belongs to, `YYYY-MM-DD`; empty before the first one. */
   day: string
@@ -14,6 +17,8 @@ export type Sweater = {
   rows: number
   bands: Band[]
   snags: Snag[]
+  /** The day's finished sweaters on the rail, oldest first: the last few only. */
+  hung: Hung[]
   /** Context fill, 0 to 100: how much is pinned on. */
   tacky: number
   /** The fill the decorations had when a compaction shook them off; 0 otherwise. */
