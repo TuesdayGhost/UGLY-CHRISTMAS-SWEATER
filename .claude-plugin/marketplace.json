@@ -1,0 +1,5 @@
+{
+  "name": "ugly-christmas-sweater",
+  "owner": { "name": "TuesdayGhost" },
+  "plugins": [{ "name": "ugly-christmas-sweater", "source": "./" }]
+}
